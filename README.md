@@ -24,8 +24,8 @@ A smart charging controller for Porsche electric vehicles that optimizes chargin
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/yourusername/porsche-amber.git
-cd porsche-amber
+git clone https://github.com/smarmau/porsche-amber-charging.git
+cd porsche-amber-charging
 ```
 
 2. Create a virtual environment and activate it:
