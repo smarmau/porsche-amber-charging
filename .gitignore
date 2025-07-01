@@ -1,0 +1,53 @@
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+
+# Logs
+*.log
+
+# Database files
+*.db
+*.sqlite3
+
+# Session files and credentials
+porsche_session.json
+
+# Cache files
+price_cache.json
+
+# Temporary files
+temp_*
+
+# CAPTCHA images
+captcha_image.*
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db

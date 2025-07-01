@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Porsche Amber Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <style>
+        :root {
+            /* Light Theme */
+            --light-bg: #f8f9fa;
+            --light-card-bg: #ffffff;
+            --light-text: #212529;
+            --light-text-muted: #6c757d;
+            --light-border: #dee2e6;
+
+            /* State Colors */
+            --success: #198754;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --primary: #0d6efd;
+
+            /* Mapping to old variables */
+            --base03: var(--light-bg);         /* Main background */
+            --base02: var(--light-card-bg);    /* Card background */
+            --base01: var(--light-border);     /* Border color */
+            --base00: var(--light-text-muted); /* Muted text */
+            --base0: var(--light-text);        /* Primary text */
+            --base1: var(--light-text);        /* Heading text */
+
+            --green: var(--success);
+            --yellow: var(--warning);
+            --red: var(--danger);
+            --blue: var(--primary);
+            --cyan: var(--primary);
+        }
+        body {
+            background-color: var(--base03) !important;
+            color: var(--base0) !important;
+        }
+
+        .main-content {
+            background-color: var(--base03) !important;
+        }
+        .bg-dark {
+            background-color: var(--base02) !important;
+        }
+        .text-white {
+            color: var(--base0) !important;
+        }
+        .text-white-50 {
+            color: var(--base00) !important;
+        }
+        .sidebar {
+            background-color: var(--base02) !important;
+        }
+        .sidebar .nav-link {
+            color: var(--base00) !important;
+        }
+        .sidebar .nav-link.active, .sidebar .nav-link:hover {
+            color: var(--cyan) !important;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--base1);
+        }
+        .card {
+            background-color: var(--base02) !important;
+            border: 1px solid var(--base01);
+        }
+        .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid var(--base01);
+            color: var(--base1);
+        }
+        .btn-primary {
+            background-color: var(--blue) !important;
+            border-color: var(--blue) !important;
+            color: var(--light-card-bg) !important; /* White text */
+            font-weight: bold;
+        }
+        .btn-primary:hover {
+            filter: brightness(0.9);
+        }
+        .btn-success {
+            background-color: var(--green) !important;
+            border-color: var(--green) !important;
+            color: var(--light-card-bg) !important; /* White text */
+        }
+        .btn-danger {
+            background-color: var(--red) !important;
+            border-color: var(--red) !important;
+            color: var(--light-card-bg) !important; /* White text */
+        }
+        .form-control.bg-secondary {
+            background-color: var(--base01) !important;
+            color: var(--base1) !important;
+            border-color: var(--base01) !important;
+        }
+        .form-control:focus {
+            background-color: var(--base01) !important;
+            color: var(--base1) !important;
+            border-color: var(--blue) !important;
+            box-shadow: 0 0 0 0.25rem rgba(38, 139, 210, 0.25) !important;
+        }
+        .price-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            color: var(--base1);
+            font-size: 2.5rem;
+            font-weight: bold;
+            border: 5px solid;
+        }
+        #battery-gauge {
+            width: 100%;
+            height: 200px;
+        }
+        .justgage .justgage-title, .justgage .justgage-value {
+            color: var(--base1) !important;
+            fill: var(--base1) !important;
+        }
+        .badge.bg-success {
+            background-color: var(--green) !important;
+            color: var(--base03) !important;
+        }
+        .badge.bg-danger {
+            background-color: var(--red) !important;
+            color: var(--base03) !important;
+        }
+        .alert-danger {
+            background-color: rgba(220, 50, 47, 0.1);
+            border-color: var(--red);
+            color: var(--red);
+        }
+        .alert-success {
+            background-color: rgba(133, 153, 0, 0.1);
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        /* Force JustGage color */
+        #battery-gauge svg g:last-of-type path {
+            fill: var(--green) !important;
+        }
+    </style>
+</head>
+<body data-live-price="{{ live_price | tojson | safe }}" data-feed-in-price="{{ feed_in_price | tojson | safe }}" data-price-threshold="{{ price_threshold | tojson | safe }}" data-electricity-prices='{{ electricity_prices | tojson | safe }}'>
+        <div class="main-content p-4">
+            <header class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Dashboard</h2>
+                <div class="connection-status">
+                    {% if is_authenticated %}
+                    <span class="badge bg-success">Connected</span>
+                    {% else %}
+                    <span class="badge bg-danger">Disconnected</span>
+                    {% endif %}
+                </div>
+            </header>
+
+            {% if error %}
+            <div class="alert alert-danger" role="alert">{{ error }}</div>
+            {% endif %}
+
+            <div id="alert-container"></div>
+
+            <div class="row">
+                <!-- Main Column -->
+                <div class="col-lg-8">
+                    <div class="card text-white bg-dark mb-4" id="vehicle-status-card">
+                        <div class="card-header h5">Vehicle Status</div>
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div id="battery-gauge"></div>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><i class="fas fa-bolt me-2"></i> Charging State: <strong id="charging-state">{% if vehicle_overview.get('is_charging') %}Charging ({{ vehicle_overview.get('BATTERY_CHARGING_STATE', 'Unknown') or 'Unknown' }}){% else %}Not Charging{% endif %}</strong></p>
+                                    <p class="mb-1"><i class="fas fa-road me-2"></i> Range: <strong id="range">{{ vehicle_overview.get('E_RANGE', {}).get('kilometers', 'N/A') }} km</strong></p>
+                                    <p class="mb-1"><i class="fas fa-lock me-2"></i> Lock State: <strong id="lock-state">{% if vehicle_overview.get('LOCK_STATE_VEHICLE', {}).get('isLocked') %}Locked{% else %}Unlocked{% endif %}</strong></p>
+                                    <p class="mb-3"><i class="fas fa-tachometer-alt me-2"></i> Mileage: <strong id="mileage">{{ vehicle_overview.get('MILEAGE', {}).get('kilometers', 'N/A') }} km</strong></p>
+                                    <div class="d-grid gap-2">
+                                        <button id="start-charging-btn" class="btn btn-success"><i class="fas fa-play me-2"></i> Start Charging</button>
+                                        <button id="stop-charging-btn" class="btn btn-danger"><i class="fas fa-stop me-2"></i> Stop Charging</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card text-white bg-dark mb-4">
+                        <div class="card-header h5">Price Forecast (Next 12 Hours)</div>
+                        <div class="card-body p-0" style="height: 550px;">
+                            <canvas id="price-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Column -->
+                <div class="col-lg-4">
+                    <div class="card text-white bg-dark mb-4">
+                        <div class="card-header h5">Live Electricity Price</div>
+                        <div class="card-body text-center">
+                            <div id="live-price-circle" class="price-circle d-flex align-items-center justify-content-center mx-auto mb-3">
+                                <span id="live-price">--</span>
+                            </div>
+                            <p class="text-muted mb-0">Price per kWh</p>
+                        </div>
+                    </div>
+                    <div class="card text-white bg-dark mb-4">
+                        <div class="card-header h5">Solar Feed-in Tariff</div>
+                        <div class="card-body text-center">
+                            <h3 id="feed-in-price" class="fw-bold">--</h3>
+                            <p class="text-muted mb-0">Price per kWh</p>
+                        </div>
+                    </div>
+                    <div class="card text-white bg-dark">
+                        <div class="card-header h5">Configuration</div>
+                        <div class="card-body">
+                            <form id="config-form">
+                                <div class="mb-3">
+                                    <label for="price-threshold" class="form-label">Max Price (c/kWh)</label>
+                                    <input type="number" class="form-control bg-secondary text-white border-secondary" id="price-threshold" value="{{ price_threshold }}">
+                                </div>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/justgage/1.4.0/justgage.min.js"></script>
+    <script>
+        let batteryGauge;
+        let priceChart;
+        let priceThreshold;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Battery Gauge
+                                    const initialBatteryLevel = {{ (vehicle_overview.get('BATTERY_LEVEL', {}).get('percent', 0) or 0) | tojson | safe }};
+            const rootStyles = getComputedStyle(document.documentElement);
+            batteryGauge = new JustGage({
+                id: 'battery-gauge',
+                value: initialBatteryLevel,
+                min: 0,
+                max: 100,
+                symbol: '%',
+                pointer: true,
+                gaugeWidthScale: 0.6,
+                counter: true,
+                relativeGaugeSize: true,
+                levelColors: [
+                    rootStyles.getPropertyValue('--red').trim(),
+                    rootStyles.getPropertyValue('--yellow').trim(),
+                    rootStyles.getPropertyValue('--green').trim()
+                ]
+            });
+
+            // Initial data load
+            const livePrice = parseFloat(document.body.dataset.livePrice);
+            priceThreshold = parseFloat(document.body.dataset.priceThreshold);
+            updatePriceCircle(livePrice, priceThreshold);
+
+            // Initialize Price Chart
+            const initialPrices = JSON.parse(document.body.dataset.electricityPrices);
+            renderPriceChart(initialPrices, priceThreshold);
+
+            // Fetch data periodically
+            fetchData();
+            setInterval(fetchData, 30000); // Refresh every 30 seconds
+
+            // Attach event listeners
+            document.getElementById('start-charging-btn').addEventListener('click', startCharging);
+            document.getElementById('stop-charging-btn').addEventListener('click', stopCharging);
+            document.querySelector('#config-form button').addEventListener('click', saveConfig);
+        });
+
+        function updatePriceCircle(price, threshold) {
+            const priceCircle = document.getElementById('live-price-circle');
+            const priceValue = document.getElementById('live-price');
+
+            if (price !== null && !isNaN(price)) {
+                priceValue.textContent = price.toFixed(1) + '¢';
+                if (price <= threshold) {
+                    priceCircle.style.borderColor = 'var(--green)';
+                } else if (price <= threshold * 1.2) {
+                    priceCircle.style.borderColor = 'var(--yellow)';
+                } else {
+                    priceCircle.style.borderColor = 'var(--red)';
+                }
+            } else {
+                priceValue.textContent = '--';
+                priceCircle.style.borderColor = 'var(--base01)';
+            }
+        }
+
+        async function fetchData() {
+            try {
+                const response = await fetch('/api/prices/live');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+
+                if (!data) {
+                    throw new Error('Received empty data from API');
+                }
+
+                // Update Prices
+                const priceThreshold = parseFloat(document.getElementById('price-threshold').value);
+                updatePriceCircle(data.general, priceThreshold);
+                const feedInPriceEl = document.getElementById('feed-in-price');
+                feedInPriceEl.textContent = (data.feed_in !== null && !isNaN(data.feed_in)) ? data.feed_in.toFixed(1) + '¢' : '--';
+
+                // Update Vehicle Status
+                const overview = data.vehicle_overview;
+                if (overview && !overview.error) {
+                    // Battery Gauge
+                    if (overview.BATTERY_LEVEL && typeof overview.BATTERY_LEVEL.percent !== 'undefined') {
+                        batteryGauge.refresh(overview.BATTERY_LEVEL.percent);
+                    }
+
+                    // Range
+                    const rangeEl = document.getElementById('range');
+                    if (rangeEl && overview.E_RANGE && typeof overview.E_RANGE.kilometers !== 'undefined') {
+                        rangeEl.textContent = `${overview.E_RANGE.kilometers} km`;
+                    }
+
+                    // Charging State
+                    const chargingStateEl = document.getElementById('charging-state');
+                    if (chargingStateEl) {
+                        const chargingState = overview.BATTERY_CHARGING_STATE || {};
+                        const isCharging = (chargingState.state || '').toUpperCase() === 'CHARGING' || (chargingState.state || '').toUpperCase() === 'ON';
+                        let statusText = isCharging ? 'Charging' : 'Not Charging';
+                        if (isCharging && chargingState.chargingMode) {
+                            statusText += ` (${chargingState.chargingMode.replace(/_/g, ' ')})`;
+                        }
+                        chargingStateEl.textContent = statusText;
+                    }
+
+                    // Lock State
+                    const lockStateEl = document.getElementById('lock-state');
+                    if (lockStateEl && overview.LOCK_STATE_VEHICLE) {
+                        lockStateEl.textContent = overview.LOCK_STATE_VEHICLE.isLocked ? 'Locked' : 'Unlocked';
+                    }
+
+                    // Mileage
+                    const mileageEl = document.getElementById('mileage');
+                    if (mileageEl && overview.MILEAGE && overview.MILEAGE.kilometers) {
+                        mileageEl.textContent = `${overview.MILEAGE.kilometers} km`;
+                    }
+
+                    // Update Price Chart
+                    if (data.electricity_prices && Array.isArray(data.electricity_prices)) {
+                        renderPriceChart(data.electricity_prices, priceThreshold);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error fetching live data:', error);
+                showAlert('Could not refresh live data.', 'danger');
+            }
+        }
+
+        function saveConfig(event) {
+            event.preventDefault();
+            const threshold = document.getElementById('price-threshold').value;
+            fetch('/api/config/price_threshold', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold: parseFloat(threshold) })
+            })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('Configuration saved successfully!', 'success');
+                } else {
+                    showAlert(`Failed to save configuration: ${data.detail}`, 'danger');
+                }
+            })
+            .catch(err => {
+                console.error('Error saving config:', err);
+                showAlert('An error occurred while saving configuration.', 'danger');
+            });
+        }
+
+        function startCharging() {
+            fetch('/api/vehicle/charging/start', { method: 'POST' })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('Charging started successfully!', 'success');
+                    setTimeout(fetchData, 2000); // Refresh data soon
+                } else {
+                    showAlert(`Failed to start charging: ${data.detail}`, 'danger');
+                }
+            })
+            .catch(err => {
+                console.error('Error starting charging:', err);
+                showAlert('An error occurred while starting charging.', 'danger');
+            });
+        }
+
+        function stopCharging() {
+            fetch('/api/vehicle/charging/stop', { method: 'POST' })
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('Charging stopped successfully!', 'success');
+                    setTimeout(fetchData, 2000); // Refresh data soon
+                } else {
+                    showAlert(`Failed to stop charging: ${data.detail}`, 'danger');
+                }
+            })
+            .catch(err => {
+                console.error('Error stopping charging:', err);
+                showAlert('An error occurred while stopping charging.', 'danger');
+            });
+        }
+
+        function renderPriceChart(prices, threshold) {
+            console.log("Rendering price chart with data:", JSON.stringify(prices, null, 2));
+            const ctx = document.getElementById('price-chart').getContext('2d');
+            if (priceChart) {
+                priceChart.destroy(); // Destroy old chart instance before creating a new one
+            }
+
+            if (!prices || prices.length === 0) {
+                ctx.font = "16px Arial";
+                ctx.fillStyle = "white";
+                ctx.textAlign = "center";
+                ctx.fillText("Price forecast data not available.", ctx.canvas.width / 2, ctx.canvas.height / 2);
+                return;
+            }
+
+            const validPrices = prices.filter(p => p.price !== null && p.timestamp !== null);
+
+            if (validPrices.length === 0) {
+                console.log("No valid price data to render after filtering.");
+                return;
+            }
+
+            const priceData = validPrices.map(p => ({ x: p.timestamp, y: p.price }));
+            const thresholdData = validPrices.map(p => ({ x: p.timestamp, y: threshold }));
+
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    datasets: [{
+                        label: 'Forecast Price (c/kWh)',
+                        data: priceData,
+                        borderColor: '#2aa198',
+                        backgroundColor: 'rgba(42, 161, 152, 0.2)',
+                        tension: 0.1,
+                        fill: true,
+                    }, {
+                        label: 'Price Threshold (c/kWh)',
+                        data: thresholdData,
+                        borderColor: '#dc322f',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                tooltipFormat: 'HH:mm',
+                                displayFormats: {
+                                    hour: 'HH:mm'
+                                }
+                            },
+                            min: new Date(validPrices[0].timestamp),
+                            max: new Date(validPrices[validPrices.length - 1].timestamp),
+                            ticks: { color: '#839496' },
+                            grid: { color: 'rgba(88, 110, 117, 0.2)' }
+                        },
+                        y: {
+                            beginAtZero: false,
+                            ticks: { color: '#839496' },
+                            grid: { color: 'rgba(88, 110, 117, 0.2)' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#93a1a1' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.role = 'alert';
+            alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
+            alertContainer.innerHTML = ''; // Clear previous alerts
+            alertContainer.appendChild(alert);
+        }
+    </script>
+</body>
+</html>

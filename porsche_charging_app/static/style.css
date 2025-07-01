@@ -1,0 +1,187 @@
+/* General Body Styles */
+body {
+    background-color: #010409;
+    color: #C9D1D9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+/* Layout */
+.sidebar {
+    width: 260px;
+    flex-shrink: 0; /* Prevent sidebar from shrinking */
+}
+
+.main-content {
+    background-color: #0D1117;
+}
+
+/* Sidebar Navigation */
+.sidebar .logo img {
+    max-width: 80px;
+}
+
+.sidebar .nav-link {
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(139, 148, 158, 0.2);
+    border-radius: 6px;
+}
+
+/* Header */
+.main-content header h2 {
+    color: #F0F6FC;
+}
+
+/* Cards */
+.card {
+    background-color: #161B22 !important;
+    border: 1px solid #30363D;
+    border-radius: 6px;
+}
+
+.card-header {
+    background-color: #161B22;
+    color: #F0F6FC;
+    font-weight: 600;
+    border-bottom: 1px solid #30363D !important;
+}
+
+/* Vehicle Status Card */
+#vehicle-status-card i {
+    color: #8B949E;
+}
+
+#battery-gauge {
+    width: 100%;
+    height: 200px;
+}
+
+/* Price Cards */
+.price-circle {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border: 8px solid grey; /* Default border */
+    transition: border-color 0.5s ease;
+}
+
+#feed-in-price {
+    font-size: 2.5rem;
+}
+
+/* Configuration Card */
+#config-form .form-control {
+    background-color: #0D1117 !important;
+    color: #C9D1D9 !important;
+    border-color: #30363D !important;
+}
+
+#config-form .form-control:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Alerts */
+#alert-container .alert {
+    border: none;
+}
+
+/* Live Price Card */
+.live-price-card .price-display {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    transition: background-color 0.5s ease;
+}
+
+.live-price-card .price-value {
+    font-size: 3.5rem;
+    font-weight: bold;
+    color: #FFFFFF;
+}
+
+.live-price-card .price-unit {
+    font-size: 1rem;
+    color: #FFFFFF;
+}
+
+.live-price-card .renewables-percentage {
+    font-size: 1.2rem;
+    color: #FFFFFF;
+    margin-top: 5px;
+}
+
+/* Price Color Indicators */
+.price-good {
+    background-color: #2E8B57; /* Green */
+}
+
+.price-average {
+    background-color: #FFA500; /* Orange */
+}
+
+.price-bad {
+    background-color: #D22B2B;   /* Red */
+}
+
+/* Solar Feed-in Card */
+.solar-feed-in-card .feed-in-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #F0F6FC;
+}
+
+.solar-feed-in-card .feed-in-unit {
+    font-size: 1rem;
+    color: #8B949E;
+}
+
+/* Tables */
+.table {
+    color: #C9D1D9;
+}
+
+.table th {
+    color: #8B949E;
+}
+
+.table-dark {
+    --bs-table-bg: #161B22;
+    --bs-table-border-color: #30363D;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #238636;
+    border-color: #238636;
+}
+
+.btn-primary:hover {
+    background-color: #2EA043;
+    border-color: #2EA043;
+}
+
+.btn-danger {
+    background-color: #DA3633;
+    border-color: #DA3633;
+}
+
+.btn-danger:hover {
+    background-color: #F85149;
+    border-color: #F85149;
+}
+
+/* Utility */
+.text-muted {
+    color: #8B949E !important;
+}
