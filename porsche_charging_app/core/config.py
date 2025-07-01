@@ -36,6 +36,9 @@ class Settings(BaseModel):
 
     # Price check interval (in minutes)
     PRICE_CHECK_INTERVAL: int = 5
+    
+    # Vehicle status check interval (in minutes)
+    VEHICLE_CHECK_INTERVAL: int = 15
 
     # Session storage
     SESSION_FILE: Path = Path("porsche_session.json")
@@ -48,7 +51,8 @@ class Settings(BaseModel):
         mutable_settings = {
             "PRICE_THRESHOLD": self.PRICE_THRESHOLD,
             "TARGET_SOC": self.TARGET_SOC,
-            "AUTO_MODE_ENABLED": self.AUTO_MODE_ENABLED
+            "AUTO_MODE_ENABLED": self.AUTO_MODE_ENABLED,
+            "VEHICLE_CHECK_INTERVAL": self.VEHICLE_CHECK_INTERVAL
         }
         with open(CONFIG_FILE, 'w') as f:
             json.dump(mutable_settings, f, indent=4)
@@ -62,6 +66,7 @@ class Settings(BaseModel):
                     self.PRICE_THRESHOLD = mutable_settings.get("PRICE_THRESHOLD", self.PRICE_THRESHOLD)
                     self.TARGET_SOC = mutable_settings.get("TARGET_SOC", self.TARGET_SOC)
                     self.AUTO_MODE_ENABLED = mutable_settings.get("AUTO_MODE_ENABLED", self.AUTO_MODE_ENABLED)
+                    self.VEHICLE_CHECK_INTERVAL = mutable_settings.get("VEHICLE_CHECK_INTERVAL", self.VEHICLE_CHECK_INTERVAL)
                 except json.JSONDecodeError:
                     # If the file is corrupted or empty, just use defaults
                     pass

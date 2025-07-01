@@ -2,6 +2,7 @@ import asyncio
 import logging
 from .porsche_service import get_porsche_service, PorscheService
 from .price_service import get_price_service, PriceService
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +94,10 @@ class ChargeController:
     async def _periodic_task(self):
         while self.is_running:
             await self.run_charging_logic()
-            await asyncio.sleep(5 * 60) # 5 minutes
+            # Use the configurable vehicle check interval
+            check_interval_minutes = settings.VEHICLE_CHECK_INTERVAL
+            logger.debug(f"Sleeping for {check_interval_minutes} minutes before next vehicle status check")
+            await asyncio.sleep(check_interval_minutes * 60)
 
     def start(self):
         if not self.is_running:

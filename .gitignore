@@ -42,6 +42,10 @@ temp_*
 # CAPTCHA images
 captcha_image.*
 
+# Utility scripts not needed in the repository
+captcha_solver_app.py
+console_app.py
+
 # IDE specific files
 .idea/
 .vscode/

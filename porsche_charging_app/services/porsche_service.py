@@ -150,7 +150,7 @@ class PorscheService:
             return {"error": "An unexpected error occurred while fetching vehicle overview."}
 
     async def _get_overview_with_retry(self, force_refresh: bool = False):
-        """Calls get_current_overview with retry logic for timeouts."""
+        """Calls get_current_overview with retry logic for timeouts and rate limits."""
         max_retries = 3
         for attempt in range(max_retries):
             try:
@@ -165,12 +165,22 @@ class PorscheService:
                     logger.error(f"Failed to get vehicle overview due to missing key {e} after {attempt + 1} attempts.")
                     raise
             except PorscheExceptionError as e:
-                if hasattr(e, 'status_code') and e.status_code == 504 and attempt < max_retries - 1:
+                # Handle different error codes
+                status_code = getattr(e, 'status_code', 0)
+                
+                # Handle rate limiting (429 Too Many Requests)
+                if status_code == 429 and attempt < max_retries - 1:
+                    # Use longer backoff for rate limits
+                    wait_time = 30 * (attempt + 1)  # 30s, 60s, 90s
+                    logger.warning(f"Rate limit exceeded (429 Too Many Requests). Waiting {wait_time}s before retry... (Attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(wait_time)
+                # Handle gateway timeout (504)
+                elif status_code == 504 and attempt < max_retries - 1:
                     wait_time = 2 ** (attempt + 1)  # Exponential backoff: 2, 4 seconds
                     logger.warning(f"Gateway timeout from Porsche API. Retrying in {wait_time}s... (Attempt {attempt + 1}/{max_retries})")
                     await asyncio.sleep(wait_time)
                 else:
-                    logger.error(f"Failed to get vehicle overview after {attempt + 1} attempts.")
+                    logger.error(f"Failed to get vehicle overview after {attempt + 1} attempts. Status code: {status_code}")
                     raise e
     
     async def start_charging(self) -> bool:

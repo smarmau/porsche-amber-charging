@@ -1,5 +1,6 @@
 {
     "PRICE_THRESHOLD": 35.0,
     "TARGET_SOC": 80,
-    "AUTO_MODE_ENABLED": true
+    "AUTO_MODE_ENABLED": true,
+    "VEHICLE_CHECK_INTERVAL": 15
 }
